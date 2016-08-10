@@ -3,6 +3,7 @@
 namespace Spatie\Sluggable;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 trait HasSlug
 {
@@ -111,9 +112,14 @@ trait HasSlug
      */
     protected function otherRecordExistsWithSlug(string $slug): bool
     {
-        return (bool) static::where($this->slugOptions->slugField, $slug)
-            ->where($this->getKeyName(), '!=', $this->getKey() ?? '0')
-            ->first();
+        $existing = static::where($this->slugOptions->slugField, $slug)
+            ->where($this->getKeyName(), '!=', $this->getKey() ?? '0');
+
+        if ($this->usesSoftDeletes()) {
+            $existing->withTrashed();
+        }
+
+        return (bool)$existing->first();
     }
 
     /**
@@ -132,5 +138,18 @@ trait HasSlug
         if ($this->slugOptions->maximumLength <= 0) {
             throw InvalidOption::invalidMaximumLength();
         }
+    }
+
+    /**
+     * Determine if the model uses soft deletes.
+     *
+     * @return bool
+     */
+    protected function usesSoftDeletes(): bool
+    {
+        return in_array(
+            SoftDeletes::class,
+            class_uses($this)
+        );
     }
 }
