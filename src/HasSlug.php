@@ -119,7 +119,7 @@ trait HasSlug
             $existing->withTrashed();
         }
 
-        return (bool)$existing->first();
+        return (bool) $existing->first();
     }
 
     /**
